@@ -78,15 +78,10 @@ def cmd_step3_generate(args: argparse.Namespace) -> None:
 
 
 def cmd_launch_ui(args: argparse.Namespace) -> None:
-    # 避免普通 CLI 使用时强依赖 gradio
+    # Tkinter 界面不依赖 Web 参数，保留参数兼容旧调用
     from .ui_app import launch_ui
 
-    launch_ui(
-        host=args.host,
-        port=args.port,
-        share=args.share,
-        default_workspace=args.workspace_dir,
-    )
+    launch_ui(default_workspace=args.workspace_dir)
 
 
 def cmd_render_text(args: argparse.Namespace) -> None:
@@ -175,10 +170,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_step3.add_argument("--seed", type=int, default=42)
     p_step3.set_defaults(func=cmd_step3_generate)
 
-    p_ui = sp.add_parser("launch-ui", help="启动可视化 UI（三步操作界面）")
-    p_ui.add_argument("--host", default="0.0.0.0")
-    p_ui.add_argument("--port", type=int, default=7860)
-    p_ui.add_argument("--share", action="store_true", help="是否创建公网分享链接")
+    p_ui = sp.add_parser("launch-ui", help="启动 Tkinter 可视化界面（三步操作）")
     p_ui.add_argument("--workspace-dir", default="./projects", help="UI 默认项目根目录")
     p_ui.set_defaults(func=cmd_launch_ui)
 
