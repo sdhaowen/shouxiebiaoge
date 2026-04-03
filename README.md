@@ -1,15 +1,10 @@
 # shouxiebiaoge
 
-一个可落地的工具原型：
+手写表格填写工具，按你要求的**三步操作**：
 
-1. 学习人类手写字体样式（支持**上传整张手写文字图片进行学习**）
-2. 构建手写样式库
-3. 使用该样式自动填写 Word 表格（`.docx`）
-
-支持两种 Word 填写方式：
-
-- **占位符模式**：单元格内容写成 `{{字段名}}`
-- **坐标模式**：按 `(table,row,col)` 指定要填写的单元格
+1. 上传手写校本，训练手写样式
+2. 上传需要填写的表格文件（Word `.docx`）
+3. 输入符合表格内容的文字，自动生成手写样式填写结果
 
 ---
 
@@ -23,13 +18,13 @@ pip install -r requirements.txt
 
 ---
 
-## 2. 学习手写字体（推荐：上传整张文字图片）
+## 2. 三步操作（推荐）
 
-### 2.1 准备上传样本描述 JSON
+> 下面示例项目名用 `demo_project`。
 
-你上传的每一张手写文字图片，都需要给一段对应文字（机器据此知道每个字是什么）。
+### Step 1：上传手写校本并训练
 
-示例 `examples/upload_samples.json`：
+准备上传样本描述 JSON（示例：`examples/upload_samples.json`）：
 
 ```json
 [
@@ -44,88 +39,45 @@ pip install -r requirements.txt
 ]
 ```
 
+执行训练：
+
+```bash
+python3 -m handwrite_tool.cli step1-train \
+  --workspace-dir ./projects \
+  --project demo_project \
+  --samples-json ./examples/upload_samples.json
+```
+
+执行后会在 `./projects/demo_project/` 下保存：
+
+- 训练后的样式库
+- 项目清单 `project.json`
+
+---
+
+### Step 2：上传需要填写的表格文件
+
+```bash
+python3 -m handwrite_tool.cli step2-upload-form \
+  --workspace-dir ./projects \
+  --project demo_project \
+  --form ./template.docx \
+  --form-name contract_form
+```
+
 说明：
 
-- `image`：上传图片路径（支持 png/jpg/jpeg/webp/bmp）
-- `text`：该图片里写的内容（建议一行文字一张图，字符不要粘连太紧）
-
-### 2.2 执行学习
-
-```bash
-python3 -m handwrite_tool.cli build-style-uploaded \
-  --samples-json ./examples/upload_samples.json \
-  --output-dir ./styles \
-  --style-name zhangsan
-```
-
-生成结果：
-
-```text
-styles/
-  zhangsan/
-    meta.json
-    glyphs/
-      U+5F20/
-      U+4E09/
-      ...
-```
+- `--form-name` 是你给表格取的别名，后续 Step 3 用这个名字选表格。
 
 ---
 
-## 3. （兼容）按字符目录学习
+### Step 3：把表格内容文字转成手写样式并填写
 
-如果你已经有按字符切好的单字图片，也可继续使用：
+#### 方式 A：占位符模式（推荐）
 
-```bash
-python3 -m handwrite_tool.cli build-style \
-  --input-dir ./samples \
-  --output-dir ./styles \
-  --style-name zhangsan
-```
+Word 表格单元格中写占位符：`{{姓名}}`、`{{地址}}` 等。
 
-目录格式：
-
-```text
-samples/
-  张/
-    1.png
-    2.png
-  三/
-    1.png
-  A/
-    1.jpg
-  1/
-    1.png
-  space/
-    1.png   # 可选，表示空格
-```
-
----
-
-## 4. 先渲染一张手写文本图片（可选测试）
-
-```bash
-python3 -m handwrite_tool.cli render-text \
-  --style-dir ./styles/zhangsan \
-  --text "张三 1990-01-01" \
-  --out ./out/demo.png
-```
-
----
-
-## 5. 填写 Word 表格
-
-> 注意：目前支持 `.docx`（Office Open XML）格式。
-
-### 5.1 占位符模式
-
-在 Word 表格单元格里写占位符（单元格内容仅写占位符），例如：
-
-- `{{姓名}}`
-- `{{身份证号}}`
-- `{{地址}}`
-
-准备数据文件 `examples/placeholder_data.json`：
+准备 JSON（示例：`examples/placeholder_data.json`）：
 
 ```json
 {
@@ -138,16 +90,18 @@ python3 -m handwrite_tool.cli render-text \
 执行：
 
 ```bash
-python3 -m handwrite_tool.cli fill-word-placeholder \
-  --input ./template.docx \
-  --output ./out/filled_placeholder.docx \
-  --style-dir ./styles/zhangsan \
-  --data-json ./examples/placeholder_data.json
+python3 -m handwrite_tool.cli step3-generate \
+  --workspace-dir ./projects \
+  --project demo_project \
+  --form-name contract_form \
+  --mode placeholder \
+  --data-json ./examples/placeholder_data.json \
+  --output ./out/filled.docx
 ```
 
-### 5.2 坐标模式
+#### 方式 B：坐标模式
 
-准备坐标映射文件 `examples/cell_map_data.json`：
+JSON（示例：`examples/cell_map_data.json`）：
 
 ```json
 {
@@ -157,42 +111,45 @@ python3 -m handwrite_tool.cli fill-word-placeholder \
 }
 ```
 
-说明：`"0,1,1"` 表示第 0 个表格、第 1 行、第 1 列。
-
 执行：
 
 ```bash
-python3 -m handwrite_tool.cli fill-word-cellmap \
-  --input ./template.docx \
-  --output ./out/filled_cellmap.docx \
-  --style-dir ./styles/zhangsan \
-  --cell-map-json ./examples/cell_map_data.json
+python3 -m handwrite_tool.cli step3-generate \
+  --workspace-dir ./projects \
+  --project demo_project \
+  --form-name contract_form \
+  --mode cellmap \
+  --data-json ./examples/cell_map_data.json \
+  --output ./out/filled_cellmap.docx
 ```
 
 ---
 
-## 6. 参数说明
-
-通用可调参数：
+## 3. 参数说明
 
 - `--height`：手写字高度（像素）
 - `--char-gap`：字符间距
 - `--image-width-mm`：插入 Word 单元格图片宽度（毫米）
-- `--seed`：随机种子（可复现实验）
+- `--seed`：随机种子
+
+示例（Step 3 调整效果）：
+
+```bash
+python3 -m handwrite_tool.cli step3-generate \
+  --workspace-dir ./projects \
+  --project demo_project \
+  --form-name contract_form \
+  --mode placeholder \
+  --data-json ./examples/placeholder_data.json \
+  --output ./out/filled_tuned.docx \
+  --height 62 \
+  --char-gap 10 \
+  --image-width-mm 45
+```
 
 ---
 
-## 7. 当前能力与后续可扩展
+## 4. 兼容命令
 
-当前原型已实现：
-
-- 上传手写文字图片学习样式（自动切分字形）
-- 按样式渲染文本
-- 自动填 Word 表格
-
-可继续扩展：
-
-- 更强的字符分割（粘连字、复杂背景）
-- 支持句子级连笔、笔画粗细扰动
-- 更智能的单元格适配（自动换行、缩放）
-- 支持 Excel 表格填写
+仍保留旧命令（`build-style-uploaded` / `fill-word-placeholder` / `fill-word-cellmap`），
+但建议优先使用上面的三步操作，更贴合实际业务流程。
