@@ -2,7 +2,7 @@
 
 一个可落地的工具原型：
 
-1. 先学习一定数量的人类手写字体样本（按字符收集图片）
+1. 学习人类手写字体样式（支持**上传整张手写文字图片进行学习**）
 2. 构建手写样式库
 3. 使用该样式自动填写 Word 表格（`.docx`）
 
@@ -23,38 +23,37 @@ pip install -r requirements.txt
 
 ---
 
-## 2. 准备手写样本
+## 2. 学习手写字体（推荐：上传整张文字图片）
 
-将手写样本按“字符目录”组织：
+### 2.1 准备上传样本描述 JSON
 
-```text
-samples/
-  张/
-    1.png
-    2.png
-  三/
-    1.png
-  A/
-    1.jpg
-  1/
-    1.png
-  space/
-    1.png   # 可选，表示空格
+你上传的每一张手写文字图片，都需要给一段对应文字（机器据此知道每个字是什么）。
+
+示例 `examples/upload_samples.json`：
+
+```json
+[
+  {
+    "image": "./uploads/page1.png",
+    "text": "张三1990-01-01"
+  },
+  {
+    "image": "./uploads/page2.png",
+    "text": "北京市朝阳区"
+  }
+]
 ```
 
-建议：
+说明：
 
-- 每个常用字符至少 3~10 张样本，越多越自然
-- 图片尽量是黑字白底，单字居中
-- 可先覆盖你的业务字段常见字符（姓名、地址、数字、日期等）
+- `image`：上传图片路径（支持 png/jpg/jpeg/webp/bmp）
+- `text`：该图片里写的内容（建议一行文字一张图，字符不要粘连太紧）
 
----
-
-## 3. 构建手写样式库
+### 2.2 执行学习
 
 ```bash
-python3 -m handwrite_tool.cli build-style \
-  --input-dir ./samples \
+python3 -m handwrite_tool.cli build-style-uploaded \
+  --samples-json ./examples/upload_samples.json \
   --output-dir ./styles \
   --style-name zhangsan
 ```
@@ -69,6 +68,36 @@ styles/
       U+5F20/
       U+4E09/
       ...
+```
+
+---
+
+## 3. （兼容）按字符目录学习
+
+如果你已经有按字符切好的单字图片，也可继续使用：
+
+```bash
+python3 -m handwrite_tool.cli build-style \
+  --input-dir ./samples \
+  --output-dir ./styles \
+  --style-name zhangsan
+```
+
+目录格式：
+
+```text
+samples/
+  张/
+    1.png
+    2.png
+  三/
+    1.png
+  A/
+    1.jpg
+  1/
+    1.png
+  space/
+    1.png   # 可选，表示空格
 ```
 
 ---
@@ -157,14 +186,13 @@ python3 -m handwrite_tool.cli fill-word-cellmap \
 
 当前原型已实现：
 
-- 手写样本学习（基于字形样本库）
+- 上传手写文字图片学习样式（自动切分字形）
 - 按样式渲染文本
 - 自动填 Word 表格
 
 可继续扩展：
 
-- 自动切分整页手写样本（OCR/字符分割）
+- 更强的字符分割（粘连字、复杂背景）
 - 支持句子级连笔、笔画粗细扰动
 - 更智能的单元格适配（自动换行、缩放）
 - 支持 Excel 表格填写
-

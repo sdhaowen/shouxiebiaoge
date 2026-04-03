@@ -4,7 +4,7 @@ import argparse
 import json
 from pathlib import Path
 
-from .dataset import build_style_dataset
+from .dataset import build_style_dataset, build_style_dataset_from_uploaded_images
 from .renderer import render_text_to_image
 from .word_filler import RenderConfig, fill_word_table_by_cell_map, fill_word_table_by_placeholders
 
@@ -17,6 +17,27 @@ def cmd_build_style(args: argparse.Namespace) -> None:
         seed=args.seed,
     )
     print(f"样式库构建完成: {meta}")
+
+
+def cmd_build_style_uploaded(args: argparse.Namespace) -> None:
+    sample_file = Path(args.samples_json)
+    samples_raw = json.loads(sample_file.read_text(encoding="utf-8"))
+
+    samples = []
+    for item in samples_raw:
+        img = item.get("image")
+        text = item.get("text", "")
+        if not img:
+            raise ValueError("samples_json 中每个对象都必须包含 image 字段。")
+        samples.append((img, text))
+
+    meta = build_style_dataset_from_uploaded_images(
+        samples=samples,
+        output_dir=args.output_dir,
+        style_name=args.style_name,
+        seed=args.seed,
+    )
+    print(f"上传图片样式学习完成: {meta}")
 
 
 def cmd_render_text(args: argparse.Namespace) -> None:
@@ -73,12 +94,26 @@ def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="手写字体学习 + Word 表格填写 工具")
     sp = p.add_subparsers(dest="command", required=True)
 
-    p_build = sp.add_parser("build-style", help="从手写样本构建样式库")
+    p_build = sp.add_parser("build-style", help="从手写样本目录构建样式库（按字符子目录）")
     p_build.add_argument("--input-dir", required=True, help="输入目录，按字符子目录组织")
     p_build.add_argument("--output-dir", default="./styles", help="样式库输出根目录")
     p_build.add_argument("--style-name", required=True, help="样式名称")
     p_build.add_argument("--seed", type=int, default=42)
     p_build.set_defaults(func=cmd_build_style)
+
+    p_build_uploaded = sp.add_parser(
+        "build-style-uploaded",
+        help="从上传的整张手写文字图片学习样式",
+    )
+    p_build_uploaded.add_argument(
+        "--samples-json",
+        required=True,
+        help='样本描述 JSON 文件，格式: [{"image":"/path/a.png","text":"张三1990"}]',
+    )
+    p_build_uploaded.add_argument("--output-dir", default="./styles", help="样式库输出根目录")
+    p_build_uploaded.add_argument("--style-name", required=True, help="样式名称")
+    p_build_uploaded.add_argument("--seed", type=int, default=42)
+    p_build_uploaded.set_defaults(func=cmd_build_style_uploaded)
 
     p_render = sp.add_parser("render-text", help="渲染文本为手写图片")
     p_render.add_argument("--style-dir", required=True, help="样式目录，例如 styles/zhangsan")
