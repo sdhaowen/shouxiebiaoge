@@ -1,69 +1,97 @@
-# shouxiebiaoge
+# shouxiebiaoge（Windows 10 使用说明）
 
-手写表格填写工具，支持 **Tkinter 桌面界面** 与 CLI。
+这是一个“手写样式自动填表”工具。你需要知道的最重要结论：
 
-核心流程（三步）：
+## 主程序是哪个？
 
-1. 上传手写校本，训练手写样式
-2. 上传需要填写的表格文件（Word `.docx`）
-3. 输入表格内容文字，生成手写样式填写结果
+**主程序入口：**
+
+```bat
+py -m handwrite_tool.cli launch-ui --workspace-dir .\projects
+```
+
+也就是：`handwrite_tool/cli.py` 的 `launch-ui` 命令。  
+你日常只要运行这一条，就会打开 Tkinter 桌面界面。
 
 ---
 
-## 1. 安装依赖
+## 一、Windows 10 从零开始（推荐照抄）
 
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
+下面命令请在项目根目录执行（有 `README.md`、`handwrite_tool` 文件夹的目录）。
+
+### 1) 创建虚拟环境
+
+```bat
+py -m venv .venv
+```
+
+### 2) 激活虚拟环境
+
+- **CMD:**
+
+```bat
+.venv\Scripts\activate
+```
+
+- **PowerShell:**
+
+```powershell
+.venv\Scripts\Activate.ps1
+```
+
+### 3) 安装依赖
+
+```bat
 pip install -r requirements.txt
 ```
 
-> Linux 若运行 Tkinter 报错，请安装系统包：`python3-tk`
+### 4) 检查 Tkinter 是否可用
+
+```bat
+py -c "import tkinter as tk; print('Tk OK', tk.TkVersion)"
+```
+
+如果这里报错，请看文末“常见问题 1”。
+
+### 5) 启动主程序（UI）
+
+```bat
+py -m handwrite_tool.cli launch-ui --workspace-dir .\projects
+```
 
 ---
 
-## 2. 启动 Tkinter UI（推荐）
-
-```bash
-python3 -m handwrite_tool.cli launch-ui \
-  --workspace-dir ./projects
-```
-
-打开后按三步操作：
+## 二、UI 里怎么操作（三步）
 
 ### Step 1：上传手写校本并训练
 
-- 点击“选择样本图片（可多选）”
-- 在文本框按“每行一条”填写对应文字（顺序与图片一致）
-- 点击“执行 Step 1”
+1. 点击“选择样本图片（可多选）”
+2. 在右侧文本框中输入每张图片对应的文字（**每行一条，顺序一致**）
+3. 点击“执行 Step 1”
 
 ### Step 2：上传需要填写的表格
 
-- 选择 `.docx` 文件
-- 可填写表格别名
-- 点击“执行 Step 2”
+1. 选择 Word 表格文件（`.docx`）
+2. 可填写表格别名（不填默认用文件名）
+3. 点击“执行 Step 2”
 
-### Step 3：输入内容并生成手写填写结果
+### Step 3：输入内容并生成结果
 
-- 选择表格
-- 选择模式：
-  - `placeholder`（按 `{{字段名}}`）
-  - `cellmap`（按坐标）
-- 粘贴 JSON（或从 JSON 文件载入）
-- 选择输出路径并执行 Step 3
+1. 选择表格
+2. 选择模式：
+   - `placeholder`：按 `{{字段名}}` 填写
+   - `cellmap`：按坐标填写
+3. 粘贴 JSON（或从 JSON 文件导入）
+4. 选择输出路径
+5. 点击“执行 Step 3”
 
-### 一键执行
-
-界面底部提供“一键执行三步”按钮：
-
-- 会依次执行 Step 1 -> Step 2 -> Step 3
-- 适合固定模板的高频使用
+界面底部还有 **“一键执行三步”** 按钮。
 
 ---
 
-## 3. JSON 示例
+## 三、JSON 示例
 
-### placeholder 模式
+### 1) placeholder 模式
 
 ```json
 {
@@ -73,7 +101,7 @@ python3 -m handwrite_tool.cli launch-ui \
 }
 ```
 
-### cellmap 模式
+### 2) cellmap 模式
 
 ```json
 {
@@ -85,43 +113,69 @@ python3 -m handwrite_tool.cli launch-ui \
 
 ---
 
-## 4. CLI 三步命令（可选）
+## 四、如果你不想用 UI（可选 CLI 三步）
 
-### Step 1 训练
+### Step 1
 
-```bash
-python3 -m handwrite_tool.cli step1-train \
-  --workspace-dir ./projects \
-  --project demo_project \
-  --samples-json ./examples/upload_samples.json
+```bat
+py -m handwrite_tool.cli step1-train --workspace-dir .\projects --project demo_project --samples-json .\examples\upload_samples.json
 ```
 
-### Step 2 上传表格
+### Step 2
 
-```bash
-python3 -m handwrite_tool.cli step2-upload-form \
-  --workspace-dir ./projects \
-  --project demo_project \
-  --form ./template.docx \
-  --form-name contract_form
+```bat
+py -m handwrite_tool.cli step2-upload-form --workspace-dir .\projects --project demo_project --form .\template.docx --form-name contract_form
 ```
 
-### Step 3 生成结果
+### Step 3
 
-```bash
-python3 -m handwrite_tool.cli step3-generate \
-  --workspace-dir ./projects \
-  --project demo_project \
-  --form-name contract_form \
-  --mode placeholder \
-  --data-json ./examples/placeholder_data.json \
-  --output ./out/filled.docx
+```bat
+py -m handwrite_tool.cli step3-generate --workspace-dir .\projects --project demo_project --form-name contract_form --mode placeholder --data-json .\examples\placeholder_data.json --output .\out\filled.docx
 ```
 
 ---
 
-## 5. 备注
+## 五、常见问题（Windows）
 
-- 当前表格格式支持 `.docx`
-- 上传学习已做准确率增强（自适应阈值、连通域、噪点过滤、粘连切分/过分割合并）
-- 保留旧命令兼容历史脚本
+### 1) `No module named tkinter` 或看不到 UI
+
+你的 Python 缺少 Tk 组件。处理方法：
+
+1. 打开 Python 安装程序
+2. 选择 **Modify**
+3. 确保安装 **tcl/tk and IDLE**
+4. 安装后重开终端，再运行：
+
+```bat
+py -c "import tkinter as tk; print('Tk OK', tk.TkVersion)"
+```
+
+### 2) `source 不是内部命令`
+
+这是因为你在 Windows 用了 Linux 命令。请改用：
+
+```bat
+.venv\Scripts\activate
+```
+
+### 3) 命令里 `python3` 不可用
+
+Windows 推荐用：
+
+```bat
+py
+```
+
+例如：
+
+```bat
+py -m handwrite_tool.cli launch-ui --workspace-dir .\projects
+```
+
+---
+
+## 六、当前支持范围
+
+- 表格文件：`.docx`
+- 已支持上传手写样本学习，并做了分割准确率增强
+- UI 已改为 Tkinter 桌面界面，流程更简洁
