@@ -77,6 +77,18 @@ def cmd_step3_generate(args: argparse.Namespace) -> None:
     print(f"步骤3完成：已生成手写填写结果 {out}")
 
 
+def cmd_launch_ui(args: argparse.Namespace) -> None:
+    # 避免普通 CLI 使用时强依赖 gradio
+    from .ui_app import launch_ui
+
+    launch_ui(
+        host=args.host,
+        port=args.port,
+        share=args.share,
+        default_workspace=args.workspace_dir,
+    )
+
+
 def cmd_render_text(args: argparse.Namespace) -> None:
     out = render_text_to_image(
         style_dir=args.style_dir,
@@ -162,6 +174,13 @@ def build_parser() -> argparse.ArgumentParser:
     p_step3.add_argument("--image-width-mm", type=float, default=40.0)
     p_step3.add_argument("--seed", type=int, default=42)
     p_step3.set_defaults(func=cmd_step3_generate)
+
+    p_ui = sp.add_parser("launch-ui", help="启动可视化 UI（三步操作界面）")
+    p_ui.add_argument("--host", default="0.0.0.0")
+    p_ui.add_argument("--port", type=int, default=7860)
+    p_ui.add_argument("--share", action="store_true", help="是否创建公网分享链接")
+    p_ui.add_argument("--workspace-dir", default="./projects", help="UI 默认项目根目录")
+    p_ui.set_defaults(func=cmd_launch_ui)
 
     # 兼容旧命令
     p_build = sp.add_parser("build-style", help="从手写样本目录构建样式库（按字符子目录）")
